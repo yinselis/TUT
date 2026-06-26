@@ -6420,12 +6420,13 @@ window.getFromDB(`oc_phone_chat_bg_${charId}`).then(bg => {
     const container = document.getElementById('chat-messages-container');
     if (container) {
         if (bg) {
+            container.classList.remove('tm-texture-dots');
             container.style.backgroundImage = `url(${bg})`;
             container.style.backgroundSize = 'cover';
             container.style.backgroundPosition = 'center';
         } else {
-            container.style.backgroundImage = 'radial-gradient(var(--ink-light) 1px, transparent 1px)';
-            container.style.backgroundSize = '20px 20px';
+            container.style.backgroundImage = 'none';
+            container.classList.add('tm-texture-dots');
         }
     }
 });
@@ -8884,8 +8885,8 @@ window.clearChatBg = async function() {
     await window.saveToDB(`oc_phone_chat_bg_${currentChatId}`, null);
     const container = document.getElementById('chat-messages-container');
     if (container) {
-        container.style.backgroundImage = 'radial-gradient(var(--ink-light) 1px, transparent 1px)';
-        container.style.backgroundSize = '20px 20px';
+        container.style.backgroundImage = 'none';
+        container.classList.add('tm-texture-dots');
     }
     window.showToast('聊天背景已清除');
 };
@@ -8894,6 +8895,7 @@ window.clearChatBg = async function() {
 window.applyChatBg = function(base64) {
     const container = document.getElementById('chat-messages-container');
     if (container && base64) {
+        container.classList.remove('tm-texture-dots');
         container.style.backgroundImage = `url(${base64})`;
         container.style.backgroundSize = 'cover';
         container.style.backgroundPosition = 'center';
