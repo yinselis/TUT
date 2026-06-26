@@ -1,0 +1,23 @@
+{
+  "name": "ECHO Chronicles & Archives",
+  "short_name": "TUT",
+  "description": "Interactive Chronicles and Archives Terminal",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#fdfbf7",
+  "theme_color": "#3a2e24",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
