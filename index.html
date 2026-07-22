@@ -1721,7 +1721,7 @@ body, html {
             </div>
 
             <div class="flex flex-col space-y-2">
-                <button id="btn-fetch-models" class="sketch-box shape-1 px-4 py-2 font-bold w-full active:scale-95 transition-transform bg-white/80 text-sm border-ink-1 border-solid">拉取模型列表</button>
+                <button id="btn-fetch-models" onclick="fetchAPIModels()" class="sketch-box shape-1 px-4 py-2 font-bold w-full active:scale-95 transition-transform bg-white/80 text-sm border-ink-1 border-solid">拉取模型列表</button>
             </div>
 
             <div class="flex flex-col space-y-2">
@@ -2103,24 +2103,23 @@ body, html {
          ========================================================= -->
 <div id="app-timeMachine" class="absolute inset-0 w-full h-full max-w-sm mx-auto bg-[var(--bg-paper)] z-[60] flex flex-col transition-transform duration-500 translate-y-full box-border pb-4 overflow-hidden">
     
-    <!-- 头部栏 -->
-    <div id="tm-header" class="flex flex-col border-b shrink-0 border-light-1">
-        <div class="flex items-center pt-6 pb-2 justify-center relative w-full h-16">
-            <div class="absolute left-6 top-6">
-                <button onclick="handleTMBack()" class="w-10 h-10 flex items-center justify-center rounded-full bg-black/5 hover:bg-black/10 active:scale-90 transition-all text-lg font-light text-ink">
-                    ←
-                </button>
-            </div>
-            <h2 id="tm-header-title" class="text-lg font-bold tracking-widest text-center transition-opacity duration-300 text-ink">时光机</h2>
-            <div id="tm-header-tools" class="absolute right-6 top-6 flex opacity-0 pointer-events-none transition-opacity duration-500">
-                <button onclick="openTMLoadModal()" class="w-10 sketch-box shape-1 px-1 py-1 flex items-center justify-center bg-white/50 active:scale-95 border-solid text-[10px] font-bold mr-1 tm-btn-outline">读档</button>
-                <button onclick="openTMSettingsModal()" class="w-10 sketch-box shape-2 px-1 py-1 flex items-center justify-center bg-white/50 active:scale-95 border-solid text-[10px] font-bold tm-btn-outline">设置</button>
-            </div>
-        </div>
-        <div class="flex w-full justify-center px-6 pb-2 text-[10px] font-bold opacity-50 tracking-widest mt-2 text-ink">
-            STORY SIMULATOR
+<!-- 头部栏 -->
+<div id="tm-header" class="flex flex-col border-b shrink-0 border-light-1">
+    <!-- 修复刘海遮挡与绝对定位问题，保证返回键在最上层 -->
+    <div class="flex items-center px-4 pt-6 pb-2 justify-center relative w-full h-16">
+        <button onclick="handleTMBack()" class="absolute left-4 w-9 h-9 flex items-center justify-center rounded-full bg-black/5 hover:bg-black/10 active:scale-90 transition-all text-lg font-light text-ink z-10">
+            ←
+        </button>
+        <h2 id="tm-header-title" class="text-[17px] font-bold tracking-widest text-center transition-opacity duration-300 w-full text-ink pointer-events-none">时光机</h2>
+        <div id="tm-header-tools" class="absolute right-4 flex opacity-0 pointer-events-none transition-opacity duration-500 z-10">
+            <button onclick="openTMLoadModal()" class="w-10 sketch-box shape-1 px-1 py-1 flex items-center justify-center bg-white/50 active:scale-95 border-solid text-[10px] font-bold mr-1 tm-btn-outline">读档</button>
+            <button onclick="openTMSettingsModal()" class="w-10 sketch-box shape-2 px-1 py-1 flex items-center justify-center bg-white/50 active:scale-95 border-solid text-[10px] font-bold tm-btn-outline">设置</button>
         </div>
     </div>
+    <div class="flex w-full justify-center px-6 pb-2 text-[10px] font-bold opacity-50 tracking-widest mt-2 text-ink pointer-events-none">
+        STORY SIMULATOR
+    </div>
+</div>
 
     <!-- ================= 模式选择界面 ================= -->
     <div id="tab-tm-mode-select" class="flex-1 flex flex-col items-center justify-center px-8 relative overflow-hidden transition-opacity duration-500 pb-10">
@@ -3090,6 +3089,7 @@ body, html {
     <div id="phone-detail-view" class="hidden flex-1 flex flex-col">
         <div id="phone-detail-content" class="flex-1 overflow-y-auto custom-scrollbar p-6 flex flex-col space-y-4 tm-texture-lines"></div>
     </div>
+</div>
 </div>
 <!-- =========================================================
      【UI组件与逻辑 - App：Chat 通讯 (单聊/气泡)】结束
@@ -4362,6 +4362,7 @@ function exitTimeMachine() {
     setTimeout(() => {
         playTab.classList.add('hidden');
         initTimeMachine(); 
+        window.tmCurrentTab = 'setup'; // 👈 加上这行，修复状态卡死！
     }, 500);
 }
 
@@ -4874,6 +4875,7 @@ if (role === 'assistant' && multiMode === 'split' && selectedTmNpcs.length > 1) 
                         </div>`;
                 } else {
                     branchUI = `<div class="flex justify-end mt-2 pt-2 border-t border-ink-light opacity-40 text-[10px] font-bold"><span class="cursor-pointer hover:opacity-100 flex items-center space-x-1" onclick="regenerateTMMessage(${actualHistoryIndex})"><span>↻</span> <span>重新生成</span></span></div>`;
+                }
                 }
 
             let formattedContent = bubble.text;
@@ -5936,21 +5938,30 @@ window.enterTMSetup = async function(mode) {
     
     // 动态判断当前模式是否有专属存档，实现日常与跑团隔离
     const saveKey = mode === 'trpg' ? 'oc_tm_progress_trpg' : 'oc_tm_progress';
-    const saved = await window.getFromDB(saveKey);
+    const saved = await getFromDB(saveKey);
     const btnContinue = document.getElementById('btn-tm-continue');
     if(saved) btnContinue.classList.remove('hidden');
     else btnContinue.classList.add('hidden');
 };
 
 window.handleTMBack = function() {
-    if (window.tmCurrentTab === 'setup') {
+    try {
+        if (window.tmCurrentTab === 'setup') {
+            window.tmCurrentTab = 'select';
+            document.getElementById('tab-tm-setup').classList.add('hidden');
+            document.getElementById('tab-tm-mode-select').classList.remove('hidden');
+            document.getElementById('tm-header-tools').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('tm-header-title').style.opacity = '1';
+        } else {
+            // 直接执行强制关闭！
+            document.getElementById('app-timeMachine').classList.remove('translate-y-0');
+            document.getElementById('app-timeMachine').classList.add('translate-y-full');
+            window.tmCurrentTab = 'select'; // 强制把状态掰正
+        }
+    } catch (error) {
+        // 任何报错直接暴力降下 UI 关掉，绝不卡死
+        document.getElementById('app-timeMachine').classList.add('translate-y-full');
         window.tmCurrentTab = 'select';
-        document.getElementById('tab-tm-setup').classList.add('hidden');
-        document.getElementById('tab-tm-mode-select').classList.remove('hidden');
-        document.getElementById('tm-header-tools').classList.add('opacity-0', 'pointer-events-none');
-        document.getElementById('tm-header-title').style.opacity = '1';
-    } else {
-        closeApp('timeMachine');
     }
 };
 </script>
@@ -6832,7 +6843,9 @@ Before replying, silently ask yourself:
 - "What was I doing off-screen just now? How does it affect my current mood/state?"
 - "Am I inventing facts, habits, or schedules for the user? (NEVER assume the user's background; only react to what they explicitly provide)."
 - "How can I convey this tension PURELY through words, tone, and pauses (...), WITHOUT using action brackets like ()?"
-- "What vocabulary and punctuation instinctively fit my current state?"`;
+- "What vocabulary and punctuation instinctively fit my current state? Does my persona actually use strict textbook punctuation? Reflect on my personality: should I use perfect grammar, drop periods at the end of sentences like a casual texter, or use fragmented/messy punctuation (like '...', '~', or no punctuation at all)? Match my punctuation EXACTLY to my character's vibe and current level of relaxation."
+- "Am I asking too many rhetorical questions, acting overly submissive, or sounding like a preacher? Maintain the exact level of relaxation, confidence, or aloofness my persona requires. Decide my sentence structure (statements vs. questions) STRICTLY based on my true personality. Do not artificially lower or raise my status."
+- "Am I blindly repeating the exact same format or feature (like Voice, Red Packets) from my previous turn? BREAK THE LOOP. ONLY use special features if it perfectly and naturally aligns with my CURRENT mood. NEVER overuse them or use them just to show off the system capabilities."`;
 
         if (charLang) {
             sysPrompt += `\n- "My explicitly designated language is: [${charLang}]. Am I using it strictly?"`;
@@ -6888,14 +6901,14 @@ NEVER clump multiple thoughts into one giant bubble.`;
         if (enableBilingual) {
             sysPrompt += `\n\n[Bilingual Translation & Tone Protocol]: 
 1. Source Tone: Use vocabulary matching your exact personality. Feel free to use slang, internet abbreviations (e.g., idk, rn, wbu), or formal words depending entirely on who you are.
-2. Translation Tone: The Chinese translation inside [译: ...] MUST be highly localized, casual, and grounded (接地气). Translate the *vibe* and *attitude*, not just the literal meaning. NEVER use stiff, machine-like, or textbook translations. 
+2. Translation Tone: The Chinese translation inside [译: ...] MUST strictly match your character's persona, social status, and current mood. If you are elegant, the translation must be elegant; if you are street-smart, it must be casual and slang-heavy. Translate the *vibe* and *attitude*, not just the literal meaning. NEVER use stiff, machine-like, or textbook translations. 
 3. Formatting: ONE Bubble = ONE Sentence = ONE Translation Tag.
 
 FATAL ERROR TO AVOID: Do NOT put multiple sentences and multiple [译: ...] tags inside a single [气泡]!
 
-Correct Format Example (Casual Personality):
-[气泡]idk man, sounds sus to me. [译: 我不到啊，听着有点离谱。]
-[气泡]brb, gotta grab a bite. [译: 马上回，我去干点饭。]
+Correct Format Example:
+[气泡]I am not quite sure about that, honestly. [译: 我对此确实不太确定。] (For formal/elegant persona)
+[气泡]idk man, sounds sus to me. [译: 我不到啊，听着有点离谱。] (For casual/street persona)
 
 WRONG Format (ABSOLUTELY FORBIDDEN):
 [气泡]I don't know. [译: 我不知道。] I will be right back. [译: 我马上回来。]
@@ -11624,7 +11637,9 @@ Before replying, silently ask yourself:
 - "What was I doing off-screen just now? How does it affect my current mood/state?"
 - "Am I inventing facts, habits, or schedules for the user? (NEVER assume the user's background; only react to what they explicitly provide)."
 - "How can I convey this tension PURELY through words, tone, and pauses (...), WITHOUT using action brackets like ()?"
-- "What vocabulary and punctuation instinctively fit my current state?"`;
+- "What vocabulary and punctuation instinctively fit my current state? Does my persona actually use strict textbook punctuation? Reflect on my personality: should I use perfect grammar, drop periods at the end of sentences like a casual texter, or use fragmented/messy punctuation (like '...', '~', or no punctuation at all)? Match my punctuation EXACTLY to my character's vibe and current level of relaxation."
+- "Am I asking too many rhetorical questions, acting overly submissive, or sounding like a preacher? Maintain the exact level of relaxation, confidence, or aloofness my persona requires. Decide my sentence structure (statements vs. questions) STRICTLY based on my true personality. Do not artificially lower or raise my status."
+- "Am I blindly repeating the exact same format or feature (like Voice, Red Packets) from my previous turn? BREAK THE LOOP. ONLY use special features if it perfectly and naturally aligns with my CURRENT mood. NEVER overuse them or use them just to show off the system capabilities."`;
 
     if (charLang) {
         sysPrompt += `\n- "My explicitly designated language is: [${charLang}]. Am I using it strictly?"`;
@@ -16884,13 +16899,14 @@ window.importAllData = async function(event) {
 </div>
 
 <!-- ================= 导出选项弹窗 ================= -->
-<div id="export-options-modal" class="absolute inset-0 bg-black/40 backdrop-blur-sm z-[300] hidden flex flex-col items-center justify-center px-6 transition-opacity">
+<div id="export-options-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] hidden flex flex-col items-center justify-center px-6 transition-opacity">
     <div class="sketch-box shape-2 bg-[var(--bg-paper)] p-6 w-full max-w-[18rem] flex flex-col shadow-2xl border-solid border-ink-1">
         <h3 class="font-bold text-sm mb-4 border-b pb-2 tracking-widest text-center border-light-1">导出设置</h3>
         
         <div class="flex flex-col space-y-3 mb-6">
             <label class="font-bold text-xs text-ink">图片保留与压缩画质</label>
-            <select id="export-image-quality" class="w-full p-2 bg-white/50 border border-solid outline-none text-xsborder-ink">
+            <!-- 修复了 text-xsborder-ink 连字的问题 -->
+            <select id="export-image-quality" class="w-full p-2 bg-white/50 border border-solid outline-none text-xs border-ink">
                 <option value="original">保留原图 (文件最大)</option>
                 <option value="high">高画质压缩 (推荐)</option>
                 <option value="medium">中等画质压缩</option>
@@ -16902,7 +16918,8 @@ window.importAllData = async function(event) {
 
         <div class="flex justify-between space-x-3">
             <button onclick="document.getElementById('export-options-modal').classList.add('hidden')" class="sketch-box shape-1 px-4 py-2 font-bold bg-white/50 border-solid text-sm active:scale-95 flex-1 opacity-70 border-ink-1">取消</button>
-            <button onclick="window.exportAllData()" id="btn-confirm-export" class="sketch-box shape-2 px-4 py-2 font-bold bg-white/90 border-solid text-sm tracking-widest active:scale-95 flex-[2]tm-btn-outline">开始导出</button>
+            <!-- 修复了 flex-[2]tm-btn-outline 连字的问题 -->
+            <button onclick="window.exportAllData()" id="btn-confirm-export" class="sketch-box shape-2 px-4 py-2 font-bold bg-white/90 border-solid text-sm tracking-widest active:scale-95 flex-[2] tm-btn-outline">开始导出</button>
         </div>
     </div>
 </div>
